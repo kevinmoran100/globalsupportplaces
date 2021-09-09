@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+    nodejs-places:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: nodejs
+        container_name: nodejs-places
+        restart: unless-stopped
+        env_file: .env
+        environment:
+            - POSTGRES_USER=$POSTGRES_USER
+            - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+            - REDISHOST=$REDISHOST
+            - POSTGRES_HOST=$POSTGRES_HOST
+        ports:
+            - "3000:3000"
+        command: ./wait-for.sh postgres:5432 -- /home/node/app/node_modules/.bin/nodemon index.js
+    postgres:
+        image: "postgres:12" # use latest official postgres version
+        env_file:
+          - .env # configure postgres
+        volumes:
+          - dbdata-postgres:/var/lib/postgresql/data/ # persist data even if container shuts down
+        ports: 
+          - "5432:5432"
+    redis:
+        image: "redis:6.2"
+
+        command: redis-server
+
+        ports:
+            - "6379:6379"
+
+        environment:
+            - REDIS_REPLICATION_MODE=master
+volumes:
+    dbdata-postgres: 
